@@ -1,0 +1,6 @@
+projectKey=com.example:mindcircuitbatch13
+serverUrl=http://54.234.138.215:9000
+serverVersion=25.8.0.112029
+dashboardUrl=http://54.234.138.215:9000/dashboard?id=com.example%3Amindcircuitbatch13
+ceTaskId=854966ec-3fa6-47ac-a422-d123bb75cfdf
+ceTaskUrl=http://54.234.138.215:9000/api/ce/task?id=854966ec-3fa6-47ac-a422-d123bb75cfdf
