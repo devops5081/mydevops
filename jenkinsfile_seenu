@@ -1,0 +1,73 @@
+pipeline {
+    agent any
+    
+    tools {
+        maven 'maven3'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Cloning GIT HUB Repo'
+                git branch: 'main', url: 'https://github.com/devops5081/mydevops.git'
+            }
+        }
+        
+        stage('Build Artifact') {
+            steps {
+                echo 'Build Artifact'
+                sh 'mvn clean package'
+            }
+        }
+        
+        stage('SonarQube Scan') {
+            steps {
+                echo 'Scanning project'
+                sh 'ls -ltr'
+                sh '''
+                    mvn sonar:sonar \\
+                      -Dsonar.host.url=http://54.234.138.215:9000 \\
+                      -Dsonar.login=squ_eb35c0909761999d92e540dff09dee597dc10b2e
+                '''
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                echo 'Build Docker Image'
+                sh "docker build -t cnu405/newrepo:${BUILD_NUMBER} ."
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'dockerhub', variable: 'dockerhub')]) {
+                        sh "docker login -u cnu405 -p ${dockerhub}"
+                    }
+                    sh "docker push cnu405/newrepo:${BUILD_NUMBER}"
+                    echo 'Pushed to Docker Hub'
+                }
+            }
+        }
+        
+        stage('Update Deployment File') {
+            environment {
+                GIT_REPO_NAME = "mydevops"
+                GIT_USER_NAME = "devops5081"
+            }
+            steps {
+                echo 'Update Deployment File'
+                withCredentials([string(credentialsId: 'gittoken', variable: 'gittoken')]) {
+                    sh '''
+                        git config user.email "cnu405@gmail.com"
+                        git config user.name "seenu"
+                        sed -i "s/batch13:.*/batch13:${BUILD_NUMBER}/g" deploymentfiles/deployment.yml
+                        git add .
+                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                        git push https://${gittoken}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    '''
+                }
+            }
+        }
+    }
+}
